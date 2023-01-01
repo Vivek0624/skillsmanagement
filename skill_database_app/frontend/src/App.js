@@ -5,7 +5,10 @@ import ListUserComponent from './components/ListUserComponent';
 import HeaderComponent from './components/HeaderComponent';
 import FooterComponent from './components/FooterComponent';
 import CreateUserComponent from './components/CreateUserComponent';
-// import UpdateUserComponent from './components/UpdateUserComponent';
+import LandingPage from './components/landing';
+import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
+import NotFound from './components/NotFound';
 // import Navbar from './components/navbar'
 import ViewUserComponent from './components/ViewUserComponent';
 function App() {
@@ -18,7 +21,10 @@ function App() {
                 {/*<sidebar></sidebar> */}
                 {/*<Navbar/>*/}
                     <Switch> 
-                          <Route path = "/" exact component = {ListUserComponent}></Route>
+                          {/*<Route path = "/" exact component = {ListUserComponent}></Route>*/}
+                          <Route path = "/" exact component = {LandingPage}></Route>
+                          <Route path="/login" exact component={LoginPage} />
+                          <Route path="/register" exact component={RegisterPage} />
                           <Route path = "/users" component = {ListUserComponent}></Route>
                           <Route path = "/add-user/:id" component = {CreateUserComponent}></Route>
                           <Route path = "/view-user/:id" component = {ViewUserComponent}></Route>

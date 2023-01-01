@@ -1,15 +1,95 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from flask_cors import CORS
+from flask_bcrypt import Bcrypt
+from flask_cors import CORS, cross_origin
 import yaml
+from flask_session import Session
+from config import ApplicationConfig
+from models import db, User
+from flask_sqlalchemy import SQLAlchemy 
 
 app = Flask(__name__)
+app.config.from_object(ApplicationConfig)
+app.config['SECRET_KEY'] = 'dqwafa2edscze2qwafq2eq35tsdg'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///./db.sqlite'
+app.config['SESSION_TYPE'] = 'sqlalchemy'
+bcrypt = Bcrypt(app)
+CORS(app, supports_credentials=True)
+sdb = SQLAlchemy(app)
+db.init_app(app)
+
+app.config['SESSION_SQLALCHEMY'] = sdb
+server_session = Session(app)
+#mongodb connection
 config = yaml.load(open('database.yaml'))
 client = MongoClient(config['uri'])
 # db = client.lin_flask
-db = client['config']
-CORS(app)
+database = client['skill_management']
+
+
+with app.app_context():
+    db.create_all()
+
+@app.route("/@me")
+def get_current_user():
+    user_id = session.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user = User.query.filter_by(id=user_id).first()
+    return jsonify({
+        "id": user.id,
+        "email": user.email
+    }) 
+
+@app.route("/register", methods=["POST"])
+def register_user():
+    email = request.json["email"]
+    password = request.json["password"]
+
+    user_exists = User.query.filter_by(email=email).first() is not None
+
+    if user_exists:
+        return jsonify({"error": "User already exists"}), 409
+
+    hashed_password = bcrypt.generate_password_hash(password)
+    new_user = User(email=email, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+    
+    session["user_id"] = new_user.id
+
+    return jsonify({
+        "id": new_user.id,
+        "email": new_user.email
+    })
+
+@app.route("/login", methods=["POST"])
+def login_user():
+    email = request.json["email"]
+    password = request.json["password"]
+
+    user = User.query.filter_by(email=email).first()
+
+    if user is None:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    if not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    session["user_id"] = user.id
+
+    return jsonify({
+        "id": user.id,
+        "email": user.email
+    })
+
+@app.route("/logout", methods=["POST"])
+def logout_user():
+    session.pop("user_id")
+    return "200"
 
 @app.route('/')
 def index():
@@ -27,7 +107,7 @@ def data():
         Years = body['Years'] 
         Level = body['Level'] 
         # db.users.insert_one({
-        db['users'].insert_one({
+        database['users'].insert_one({
             "Name": Name,
             "Skill": Skill,
             "Domain":Domain,
@@ -45,7 +125,7 @@ def data():
     
     # GET all data from database
     if request.method == 'GET':
-        allData = db['users'].find()
+        allData = database['users'].find()
         dataJson = []
         for data in allData:
             id = data['_id']
@@ -71,7 +151,7 @@ def onedata(id):
 
     # GET a specific data by id
     if request.method == 'GET':
-        data = db['users'].find_one({'_id': ObjectId(id)})
+        data = database['users'].find_one({'_id': ObjectId(id)})
         id = data['_id']
         Name = data['Name']
         Skill = data['Skill']
@@ -91,7 +171,7 @@ def onedata(id):
         
     # DELETE a data
     if request.method == 'DELETE':
-        db['users'].delete_many({'_id': ObjectId(id)})
+        database['users'].delete_many({'_id': ObjectId(id)})
         print('\n # Deletion successful # \n')
         return jsonify({'status': 'Data id: ' + id + ' is deleted!'})
 
@@ -104,7 +184,7 @@ def onedata(id):
         Years = body['Years']
         Level = body['Level']
 
-        db['users'].update_one(
+        database['users'].update_one(
             {'_id': ObjectId(id)},
             {
                 "$set": {
@@ -120,6 +200,9 @@ def onedata(id):
         print('\n # Update successful # \n')
         return jsonify({'status': 'Data id: ' + id + ' is updated!'})
 
+
 if __name__ == '__main__':
+    app.config['SESSION_TYPE'] = 'filesystem'
+    server_session.init_app(app)
     app.debug = True
     app.run()
