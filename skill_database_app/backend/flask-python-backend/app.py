@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS, cross_origin
-import yaml
+# import yaml 
 from flask_session import Session
 from config import ApplicationConfig
 from models import db, User
@@ -20,10 +20,10 @@ sdb = SQLAlchemy(app)
 db.init_app(app)
 
 app.config['SESSION_SQLALCHEMY'] = sdb
-server_session = Session(app)
+server_session = Session(app) 
 #mongodb connection
-config = yaml.load(open('database.yaml'))
-client = MongoClient(config['uri'])
+# config = yaml.load(open('database.yaml'))
+client = MongoClient('mongodb+srv://skill_database:Geology@cluster007.xddmy.mongodb.net/skill_management?authSource=admin',tls=True, tlsAllowInvalidCertificates=True) 
 # db = client.lin_flask
 database = client['skill_management']
 

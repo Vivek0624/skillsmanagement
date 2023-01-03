@@ -40,9 +40,20 @@
 .footer {
   position: absolute;
   bottom: 0;
-  width:100%;
+  width: 100%;
   height: 50px;
   background-color: black;
   text-align: center;
   color: white;
+}
+
+.cardCustom {
+  border-radius: 25px !important;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.349);
+}
+
+.customHeader {
+  font-family: 'poppins';
+  font-size: 2rem;
+  font-weight: 400;
 }
